@@ -1,50 +1,61 @@
-name: Main Pipeline
+name: main
 
 on:
   push: 
     branches:
       - main
-
+  workflow_dispatch: 
+    
 jobs: 
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: setup dotnet environment
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
         with:
           dotnet-version: '9.0'
           
-      - name: Restore dependencies
+      - run: dotnet --info    
+          
+      - name: dotnet restore
         run: dotnet restore
           
-      - name: Run test
-        run: dotnet test --no-restore --verbosity normal 
+      - name: dotnet build [Release]
+        run: dotnet build --configuration Release
+
+      - name: dotnet test [Release]
+        run: dotnet test --configuration Release --no-restore --no-build --verbosity normal
   
-  publish:
+  publish-artifacts:
     runs-on: ubuntu-latest
+    name: publish artifacts
     needs: test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-  
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          fetch-depth: 1
+      
+      - name: setup dotnet
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
         with:
           dotnet-version: '9.0'
 
-      - name: Set up NuGet environment
-          env:
-            NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-          run: |
-            echo "::add-mask::$NUGET_API_KEY"
-
-#      - name: Deploy to NuGet
-#        run: dotnet nuget push <package-name.nupkg> --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
-#        
-#      - name: Cleanup built artifacts
-#          run: dotnet clean  
+      - name: dotnet info
+        run: dotnet --info
       
-    
+      - name: dotnet restore
+        run: dotnet restore
+     
+      - name: dotnet pack [Release]
+        run: dotnet pack --configuration Release --no-restore --output artifacts 
+      
+      - name: upload artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with: 
+          name: artifact
+          path: artifacts/
+          

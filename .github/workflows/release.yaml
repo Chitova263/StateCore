@@ -1,0 +1,43 @@
+name: release
+
+on:
+  workflow_dispatch:
+  
+  release: 
+    types:
+      - published
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: setup dotnet environment
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: '9.0'
+
+      - run: dotnet --info
+
+      - name: dotnet restore
+        run: dotnet restore
+
+      - name: dotnet build [Release]
+        run: dotnet build --configuration Release
+
+      - name: Extract version from tag
+          id: get_version
+          run: |
+            # Remove the "refs/tags/" prefix from GITHUB_REF
+            TAG=${GITHUB_REF#refs/tags/}
+            # Remove leading 'v' if tag looks like "v1.2.3"
+            VERSION=${TAG#v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: dotnet pack [Release]
+        run: dotnet pack --configuration Release --no-restore -p:PackageVersion=${{ steps.get_version.outputs.version }} --output artifacts 
+
+      - name: Publish NuGet package
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -5,12 +5,17 @@
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <PackageId>StateCore</PackageId>
-        <Version>1.0.0</Version>
         <Authors>Nigel Mukandi</Authors>
-        <Company>Your Company</Company>
-        <Description>Lightweight framework for creating finite state machines in C#</Description>
+        <Copyright>Copyright Nigel Mukandi</Copyright>
+        <Description>Lightweight framework for creating finite state machines</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Chitova263/StateCore</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Chitova263/StateCore.git</RepositoryUrl>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>
