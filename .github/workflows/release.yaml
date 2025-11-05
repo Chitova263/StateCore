@@ -28,13 +28,13 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Extract version from tag
-          id: get_version
-          run: |
-            # Remove the "refs/tags/" prefix from GITHUB_REF
-            TAG=${GITHUB_REF#refs/tags/}
-            # Remove leading 'v' if tag looks like "v1.2.3"
-            VERSION=${TAG#v}
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+        id: get_version
+        run: |
+          # Remove the "refs/tags/" prefix from GITHUB_REF
+          TAG=${GITHUB_REF#refs/tags/}
+          # Remove leading 'v' if tag looks like "v1.2.3"
+          VERSION=${TAG#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: dotnet pack [Release]
         run: dotnet pack --configuration Release --no-restore -p:PackageVersion=${{ steps.get_version.outputs.version }} --output artifacts 
