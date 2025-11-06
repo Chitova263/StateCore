@@ -1,6 +1,6 @@
 ﻿namespace FiniteStateMachineTest;
 
-internal enum EnumState
+internal enum State
 {
     Playing,
     Paused,

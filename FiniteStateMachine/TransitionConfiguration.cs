@@ -13,7 +13,16 @@ public sealed class TransitionConfiguration<TState, TTrigger> where TTrigger : E
     
     public StateConfiguration<TState, TTrigger> GoTo(TState target)
     {
-        _stateConfiguration.Transitions[_trigger] = target;
+        _stateConfiguration.Transitions[_trigger] = new TransitionOption<TTrigger, TState>
+        {
+            Trigger = _trigger,
+            TargetState = target,
+            EntryActions = _stateConfiguration.EntryActions.ToList(),
+            ExitActions = _stateConfiguration.ExitActions.ToList()
+        };
+        
+        _stateConfiguration.ClearActions();
+        
         return _stateConfiguration;
     }
 }
