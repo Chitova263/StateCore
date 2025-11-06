@@ -1,13 +1,18 @@
 name: main
 
+run-name: "${{ github.event.head_commit.message }} — SHA: ${{ github.sha }}"
+
 on:
   push: 
     branches:
       - main
   workflow_dispatch: 
     
+env: 
+  DOTNET_VERSION: '9.0'
+  
 jobs: 
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repository
@@ -16,7 +21,7 @@ jobs:
       - name: setup dotnet environment
         uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
         with:
-          dotnet-version: '9.0'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
           
       - run: dotnet --info    
           
@@ -32,7 +37,8 @@ jobs:
   publish-artifacts:
     runs-on: ubuntu-latest
     name: publish artifacts
-    needs: test
+    needs: build
+    environment: production
     steps:
       - name: checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -42,7 +48,7 @@ jobs:
       - name: setup dotnet
         uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
         with:
-          dotnet-version: '9.0'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: dotnet info
         run: dotnet --info

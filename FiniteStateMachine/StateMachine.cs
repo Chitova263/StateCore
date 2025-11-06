@@ -57,7 +57,13 @@ public sealed class StateMachine<TState, TTrigger>
             Trigger = trigger
         };
         if (!_rules.TryGetValue(key, out var rule)) return false;
+        
+        rule.ExitActions.ForEach(action =>  action());
+        
         CurrentState = rule.To;
+        
+        rule.EntryActions.ForEach(action => action());
+        
         return true;
     }
 }

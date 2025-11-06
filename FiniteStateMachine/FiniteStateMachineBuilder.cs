@@ -10,7 +10,7 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
     where TState : notnull
 {
     private readonly TState _initialState;
-    private readonly Dictionary<TState, Dictionary<TTrigger, TState>> _transitions = new();
+    private readonly Dictionary<TState, Dictionary<TTrigger, TransitionOption<TTrigger, TState>>> _transitions = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FiniteStateMachineBuilder{TState, TTrigger}"/> class.
@@ -52,7 +52,7 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
         var rules = new Dictionary<RuleKey<TState, TTrigger>, Rule<TState, TTrigger>>();
         foreach (var (fromState, transitions) in _transitions)
         {
-            foreach (var (trigger, targetState) in transitions)
+            foreach (var (trigger, transitionOption) in transitions)
             {
                 var ruleKey = new RuleKey<TState, TTrigger>
                 {
@@ -62,8 +62,10 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
                 var rule = new Rule<TState, TTrigger>
                 {
                     From = fromState,
-                    To = targetState,
-                    Trigger = trigger
+                    To = transitionOption.TargetState,
+                    Trigger = trigger,
+                    EntryActions = transitionOption.EntryActions,
+                    ExitActions = transitionOption.ExitActions,
                 };
                 rules.Add(ruleKey, rule);
             }

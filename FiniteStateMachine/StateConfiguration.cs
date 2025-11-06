@@ -8,11 +8,17 @@ namespace FiniteStateMachine;
 public sealed class StateConfiguration<TState, TTrigger> where TTrigger : Enum
 {
     private readonly TState _state;
+    
+    private readonly List<Action> _entryActions;
+    private readonly List<Action> _exitActions;
+    
+    internal IReadOnlyList<Action> EntryActions => _entryActions;
+    internal IReadOnlyList<Action> ExitActions => _exitActions;
         
     /// <summary>
     /// Gets the transitions defined for the current state.
     /// </summary>
-    internal Dictionary<TTrigger, TState> Transitions { get; } = new();
+    internal Dictionary<TTrigger, TransitionOption<TTrigger, TState>> Transitions { get; } = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StateConfiguration{TState, TTrigger}"/> class.
@@ -21,6 +27,14 @@ public sealed class StateConfiguration<TState, TTrigger> where TTrigger : Enum
     internal StateConfiguration(TState state)
     {
         _state = state;
+        _entryActions = new List<Action>();
+        _exitActions = new List<Action>();
+    }
+
+    internal void ClearActions()
+    {
+        _entryActions.Clear();
+        _exitActions.Clear();
     }
         
     /// <summary>
@@ -30,6 +44,19 @@ public sealed class StateConfiguration<TState, TTrigger> where TTrigger : Enum
     /// <returns>A configuration object to setup the transition.</returns>
     public TransitionConfiguration<TState, TTrigger> On(TTrigger trigger)
     {
+        
         return new TransitionConfiguration<TState, TTrigger>(this, trigger);
+    }
+    
+    public StateConfiguration<TState, TTrigger> OnEnter(Action action)
+    {
+        _entryActions.Add(action);
+        return this;
+    }
+    
+    public StateConfiguration<TState, TTrigger> OnExit(Action action)
+    {
+        _exitActions.Add(action);
+        return this;
     }
 }
