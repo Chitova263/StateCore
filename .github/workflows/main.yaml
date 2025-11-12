@@ -1,5 +1,7 @@
 name: main
 
+run-name: Initiated by ${{ github.actor }} | Branch ${{ github.ref }} | SHA ${{ github.sha }}
+
 on:
   push: 
     branches:
@@ -7,7 +9,7 @@ on:
   workflow_dispatch: 
     
 jobs: 
-  test:
+  main-build:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repository
