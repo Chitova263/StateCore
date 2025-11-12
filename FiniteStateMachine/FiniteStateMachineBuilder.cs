@@ -20,7 +20,7 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
     {
         _initialState = initialState;
     }
-        
+
     /// <summary>
     /// Defines a state and its possible transitions.
     /// </summary>
@@ -36,7 +36,7 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
         _transitions.Add(state, cfg.Transitions);
         return this;
     }
-        
+
     /// <summary>
     /// Builds and returns the configured state machine.
     /// </summary>

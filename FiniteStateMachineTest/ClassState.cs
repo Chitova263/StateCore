@@ -15,7 +15,7 @@ public class ClassState : IEquatable<ClassState>
         {
             return false;
         }
-        
+
         return state.Name == Name;
     }
 

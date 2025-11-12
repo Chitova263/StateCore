@@ -1,6 +1,6 @@
 ﻿namespace FiniteStateMachine;
 
-public sealed record Rule<TState, TTrigger> 
+public sealed record Rule<TState, TTrigger>
     where TTrigger : Enum
 {
     public required TState From { get; init; }
@@ -8,6 +8,6 @@ public sealed record Rule<TState, TTrigger>
     public required TTrigger Trigger { get; init; }
 
     public required List<Action> EntryActions { get; init; }
-    
+
     public required List<Action> ExitActions { get; init; }
 }

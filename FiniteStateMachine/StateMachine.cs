@@ -12,17 +12,17 @@ public sealed class StateMachine<TState, TTrigger>
     /// A dictionary containing rules for state transitions.
     /// </summary>
     private readonly Dictionary<RuleKey<TState, TTrigger>, Rule<TState, TTrigger>> _rules;
-    
+
     /// <summary>
     /// Gets the rules for state transitions as a read-only dictionary.
     /// </summary>
     public IReadOnlyDictionary<RuleKey<TState, TTrigger>, Rule<TState, TTrigger>> Rules => _rules;
-    
+
     /// <summary>
     /// Gets the current state of the state machine.
     /// </summary>
     public TState CurrentState { get; private set; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="StateMachine{TState, TTrigger}"/> class.
     /// </summary>
@@ -43,7 +43,7 @@ public sealed class StateMachine<TState, TTrigger>
     {
         return new FiniteStateMachineBuilder<TState, TTrigger>(initialState);
     }
-    
+
     /// <summary>
     /// Triggers a transition based on the specified trigger, updating the current state if a rule is matched.
     /// </summary>
@@ -57,13 +57,13 @@ public sealed class StateMachine<TState, TTrigger>
             Trigger = trigger
         };
         if (!_rules.TryGetValue(key, out var rule)) return false;
-        
-        rule.ExitActions.ForEach(action =>  action());
-        
+
+        rule.ExitActions.ForEach(action => action());
+
         CurrentState = rule.To;
-        
+
         rule.EntryActions.ForEach(action => action());
-        
+
         return true;
     }
 }
