@@ -27,10 +27,16 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
     /// <param name="state">The state to configure.</param>
     /// <param name="configure">An action to configure the state transitions.</param>
     /// <returns>A reference to the current builder instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the state has already been configured.</exception>
     public FiniteStateMachineBuilder<TState, TTrigger> State(
         TState state,
         Action<StateConfiguration<TState, TTrigger>> configure)
     {
+        if (_transitions.ContainsKey(state))
+        {
+            throw new InvalidOperationException($"State '{state}' has already been configured. Each state can only be configured once.");
+        }
+
         var cfg = new StateConfiguration<TState, TTrigger>(state);
         configure(cfg);
         _transitions.Add(state, cfg.Transitions);
@@ -41,8 +47,16 @@ public sealed class FiniteStateMachineBuilder<TState, TTrigger>
     /// Builds and returns the configured state machine.
     /// </summary>
     /// <returns>A new state machine configured with specified states and transitions.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the initial state has no transitions configured.</exception>
     public StateMachine<TState, TTrigger> Build()
     {
+        if (!_transitions.ContainsKey(_initialState))
+        {
+            throw new InvalidOperationException(
+                $"Initial state '{_initialState}' has no transitions configured. " +
+                "The initial state must have at least one transition defined.");
+        }
+
         var rules = GetTransitionRules();
         return new StateMachine<TState, TTrigger>(_initialState, rules);
     }
