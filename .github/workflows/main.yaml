@@ -3,65 +3,43 @@ name: main
 run-name: "${{ github.event.head_commit.message }} — SHA: ${{ github.sha }}"
 
 on:
-  push: 
+  push:
     branches:
       - main
-  workflow_dispatch: 
-    
-env: 
-  DOTNET_VERSION: '9.0'
-  
-jobs: 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-        
-      - name: setup dotnet environment
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          
-      - run: dotnet --info    
-          
-      - name: dotnet restore
-        run: dotnet restore
-          
-      - name: dotnet build [Release]
-        run: dotnet build --configuration Release
+  workflow_dispatch:
 
-      - name: dotnet test [Release]
-        run: dotnet test --configuration Release --no-restore --no-build --verbosity normal
-  
+env:
+  DOTNET_VERSION: '9.0'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+    with:
+      dotnet-version: '9.0'
+
   publish-artifacts:
     runs-on: ubuntu-latest
-    name: publish artifacts
     needs: build
     environment: production
     steps:
-      - name: checkout code
+      - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
           fetch-depth: 1
-      
-      - name: setup dotnet
+
+      - name: Setup .NET
         uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: dotnet info
-        run: dotnet --info
-      
-      - name: dotnet restore
+      - name: Restore dependencies
         run: dotnet restore
-     
-      - name: dotnet pack [Release]
-        run: dotnet pack --configuration Release --no-restore --output artifacts 
-      
-      - name: upload artifact
+
+      - name: Pack
+        run: dotnet pack --configuration Release --no-restore --output artifacts
+
+      - name: Upload artifact
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
-        with: 
+        with:
           name: artifact
           path: artifacts/
-          
