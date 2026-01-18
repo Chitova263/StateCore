@@ -1,27 +1,48 @@
 # StateCore
 
-[![NuGet Stats](https://img.shields.io/nuget/v/StateCore.svg)](https://www.nuget.org/packages/StateCore)
-![Build](https://github.com/Chitova263/StateCore/workflows/main/badge.svg)
+[![NuGet](https://img.shields.io/nuget/v/StateCore.svg)](https://www.nuget.org/packages/StateCore)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/StateCore.svg)](https://www.nuget.org/packages/StateCore)
+[![Build](https://github.com/Chitova263/StateCore/workflows/main/badge.svg)](https://github.com/Chitova263/StateCore/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A flexible and type-safe finite state machine library for C#.
+A lightweight, type-safe finite state machine library for .NET applications.
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Transition Lifecycle](#transition-lifecycle)
+- [Advanced Usage](#advanced-usage)
+- [API Reference](#api-reference)
+- [Use Cases](#use-cases)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- 🎯 **Type-Safe**: Strongly typed states and triggers using enums or custom classes
-- 🔄 **Flexible Transitions**: Define complex state transitions with granular control
-- 🎬 **Per-Transition Lifecycle Hooks**: Execute specific actions for individual transitions
-- 🔗 **Fluent API**: Intuitive builder pattern for readable state machine definitions
-- ⚡ **Multiple Actions**: Chain multiple entry/exit actions per transition
-- 🧩 **Extensible**: Works with enums or custom IEquatable types
+- **Type-Safe** — Strongly typed states and triggers using enums or custom types
+- **Fluent API** — Intuitive builder pattern for readable state machine definitions
+- **Per-Transition Hooks** — Execute specific actions for individual transitions
+- **Multiple Actions** — Chain multiple entry/exit actions per transition
+- **Extensible** — Works with enums or any type implementing `IEquatable<T>`
+- **Zero Dependencies** — No external dependencies required
+
+## Requirements
+
+- .NET 9.0 or later
 
 ## Installation
+
+### .NET CLI
 
 ```bash
 dotnet add package StateCore
 ```
 
-Or via Package Manager:
+### Package Manager
+
 ```powershell
 Install-Package StateCore
 ```
@@ -31,108 +52,102 @@ Install-Package StateCore
 ```csharp
 using StateCore;
 
-// Define your states and triggers
+// Define states and triggers
 public enum State { Paused, Playing, Stopped }
 public enum Trigger { Play, Pause, Stop }
 
-// Create the state machine
+// Build the state machine
 var stateMachine = StateMachine<State, Trigger>
     .WithInitialState(State.Paused)
     .State(State.Paused, cfg =>
     {
-        // Transition: Paused → Playing
-        cfg
-            .OnExit(() => Console.WriteLine("Leaving Paused state"))
-            .OnEnter(() => Console.WriteLine("Entering Playing state"))
-            .On(Trigger.Play)
-            .GoTo(State.Playing);
-        
-        // Transition: Paused → Stopped
-        cfg
-            .OnExit(() => Console.WriteLine("Leaving Paused state"))
-            .OnEnter(() => Console.WriteLine("Entering Stopped state"))
-            .On(Trigger.Stop)
-            .GoTo(State.Stopped);
+        cfg.OnExit(() => Console.WriteLine("Leaving Paused"))
+           .OnEnter(() => Console.WriteLine("Entering Playing"))
+           .On(Trigger.Play)
+           .GoTo(State.Playing);
+
+        cfg.OnExit(() => Console.WriteLine("Leaving Paused"))
+           .OnEnter(() => Console.WriteLine("Entering Stopped"))
+           .On(Trigger.Stop)
+           .GoTo(State.Stopped);
     })
     .State(State.Playing, cfg => cfg
-        .OnExit(() => Console.WriteLine("Leaving Playing state"))
-        .OnEnter(() => Console.WriteLine("Entering Paused state"))
+        .OnExit(() => Console.WriteLine("Leaving Playing"))
+        .OnEnter(() => Console.WriteLine("Entering Paused"))
         .On(Trigger.Pause)
         .GoTo(State.Paused))
     .State(State.Stopped, cfg => cfg
-        .OnEnter(() => Console.WriteLine("Entering Playing state from Stopped"))
+        .OnEnter(() => Console.WriteLine("Entering Playing"))
         .On(Trigger.Play)
         .GoTo(State.Playing))
     .Build();
 
-// Trigger state transitions
+// Fire a trigger
 stateMachine.Trigger(Trigger.Play);
 // Output:
-// Leaving Paused state
-// Entering Playing state
+// Leaving Paused
+// Entering Playing
 
-Console.WriteLine($"Current state: {stateMachine.CurrentState}"); // Playing
+Console.WriteLine(stateMachine.CurrentState); // Playing
 ```
 
-## Understanding Transitions
+## Transition Lifecycle
 
-**Important**: In StateCore, the lifecycle hooks work as follows:
-- **`OnExit()`** - Executes when leaving the **current state** (the state being configured)
-- **`OnEnter()`** - Executes when entering the **target state** (the state in `GoTo()`)
+In StateCore, lifecycle hooks are bound to specific transitions:
+
+- **`OnExit()`** — Executes when leaving the current state (the state being configured)
+- **`OnEnter()`** — Executes when entering the target state (the state specified in `GoTo()`)
 
 ```csharp
 .State(State.Paused, cfg =>
 {
-    cfg
-        .OnExit(() => Console.WriteLine("Exiting Paused"))        // Runs when leaving Paused
-        .OnEnter(() => Console.WriteLine("Entering Playing"))     // Runs when entering Playing
-        .On(Trigger.Play)
-        .GoTo(State.Playing);  // ← OnEnter refers to THIS state
+    cfg.OnExit(() => Console.WriteLine("Exiting Paused"))   // Runs when leaving Paused
+       .OnEnter(() => Console.WriteLine("Entering Playing")) // Runs when entering Playing
+       .On(Trigger.Play)
+       .GoTo(State.Playing);
 })
 ```
 
-Each configuration chain represents a **specific transition path** with its own unique behavior.
+Each configuration chain represents a specific transition path with its own behavior.
+
+### Execution Order
+
+When a trigger fires:
+
+1. All `OnExit` actions execute (leaving the current state)
+2. All `OnEnter` actions execute (entering the target state)
+3. State updates to the target state
 
 ## Advanced Usage
 
-### Multiple Actions Per Transition
+### Chaining Multiple Actions
 
-Chain multiple actions that execute in order when entering the target state:
+Execute multiple actions in sequence during a transition:
 
 ```csharp
 .State(State.Stopped, cfg => cfg
-    .OnExit(() => Console.WriteLine("Leaving Stopped state"))
-    .OnEnter(() => Console.WriteLine("1. Initializing audio system"))
-    .OnEnter(() => Console.WriteLine("2. Loading media file"))
-    .OnEnter(() => Console.WriteLine("3. Starting playback"))
-    .OnEnter(() => Console.WriteLine("4. Updating UI to Playing"))
+    .OnExit(() => Console.WriteLine("Leaving Stopped"))
+    .OnEnter(() => InitializeAudioSystem())
+    .OnEnter(() => LoadMediaFile())
+    .OnEnter(() => StartPlayback())
+    .OnEnter(() => UpdateUI())
     .On(Trigger.Play)
     .GoTo(State.Playing))
 ```
 
-When `Trigger.Play` is fired:
-```
-Output:
-Leaving Stopped state
-1. Initializing audio system
-2. Loading media file
-3. Starting playback
-4. Updating UI to Playing
-```
+### Context-Specific Entry Behavior
 
-### Different Entry Behavior for Same Target State
-
-You can enter the same state from different sources with different behavior:
+Define different behavior when entering the same state from different sources:
 
 ```csharp
-// From Paused
+// Entering Playing from Paused
 .State(State.Paused, cfg => cfg
     .OnExit(() => Console.WriteLine("Resuming from pause"))
     .OnEnter(() => Console.WriteLine("Continuing playback"))
     .On(Trigger.Play)
     .GoTo(State.Playing))
 
-// From Stopped
+// Entering Playing from Stopped
 .State(State.Stopped, cfg => cfg
     .OnExit(() => Console.WriteLine("Starting fresh"))
     .OnEnter(() => Console.WriteLine("Beginning new playback"))
@@ -140,37 +155,28 @@ You can enter the same state from different sources with different behavior:
     .GoTo(State.Playing))
 ```
 
-Both transitions go to `State.Playing`, but with different `OnEnter` actions!
+### Multiple Transitions from One State
 
-### Multiple Transitions from Same State
-
-Define different behavior for each outgoing transition:
+Define distinct behavior for each outgoing transition:
 
 ```csharp
 .State(State.Playing, cfg =>
 {
-    // Transition: Playing → Paused
-    cfg
-        .OnExit(() => Console.WriteLine("Pausing playback"))
-        .OnEnter(() => Console.WriteLine("Now paused"))
-        .OnEnter(() => SavePlaybackPosition())
-        .On(Trigger.Pause)
-        .GoTo(State.Paused);
-    
-    // Transition: Playing → Stopped
-    cfg
-        .OnExit(() => Console.WriteLine("Stopping playback"))
-        .OnExit(() => ReleaseResources())
-        .OnEnter(() => Console.WriteLine("Fully stopped"))
-        .OnEnter(() => ResetPlaybackPosition())
-        .On(Trigger.Stop)
-        .GoTo(State.Stopped);
+    cfg.OnExit(() => Console.WriteLine("Pausing"))
+       .OnEnter(() => SavePlaybackPosition())
+       .On(Trigger.Pause)
+       .GoTo(State.Paused);
+
+    cfg.OnExit(() => ReleaseResources())
+       .OnEnter(() => ResetPlaybackPosition())
+       .On(Trigger.Stop)
+       .GoTo(State.Stopped);
 })
 ```
 
-### Using Custom Classes as States
+### Custom State Types
 
-Instead of enums, use custom classes that implement `IEquatable<T>`:
+Use custom classes instead of enums by implementing `IEquatable<T>`:
 
 ```csharp
 public class State : IEquatable<State>
@@ -191,162 +197,84 @@ public class State : IEquatable<State>
     }
 
     public override bool Equals(object? obj) => Equals(obj as State);
-
     public override int GetHashCode() => HashCode.Combine(Id, Name);
 
     public static bool operator ==(State? left, State? right) => Equals(left, right);
     public static bool operator !=(State? left, State? right) => !Equals(left, right);
 }
 
-// Define state instances
 var paused = new State(1, "Paused");
 var playing = new State(2, "Playing");
 
-// Use in state machine
 var stateMachine = StateMachine<State, Trigger>
     .WithInitialState(paused)
     .State(paused, cfg => cfg
-        .OnExit(() => Console.WriteLine($"Leaving {paused.Name}"))
         .OnEnter(() => Console.WriteLine($"Entering {playing.Name}"))
         .On(Trigger.Play)
         .GoTo(playing))
     .Build();
 ```
 
-## Complete Example: Media Player
-
-```csharp
-public enum State { Stopped, Playing, Paused, Buffering }
-public enum Trigger { Play, Pause, Stop, Buffer, Resume }
-
-var mediaPlayer = StateMachine<State, Trigger>
-    .WithInitialState(State.Stopped)
-    .State(State.Stopped, cfg =>
-    {
-        // Stopped → Playing
-        cfg
-            .OnExit(() => Console.WriteLine("Starting player"))
-            .OnEnter(() => Console.WriteLine("Loading media"))
-            .OnEnter(() => Console.WriteLine("Playback started"))
-            .On(Trigger.Play)
-            .GoTo(State.Playing);
-    })
-    .State(State.Playing, cfg =>
-    {
-        // Playing → Paused
-        cfg
-            .OnExit(() => Console.WriteLine("Pausing playback"))
-            .OnEnter(() => Console.WriteLine("Playback paused"))
-            .OnEnter(() => SavePosition())
-            .On(Trigger.Pause)
-            .GoTo(State.Paused);
-        
-        // Playing → Stopped
-        cfg
-            .OnExit(() => Console.WriteLine("Stopping playback"))
-            .OnExit(() => ReleaseResources())
-            .OnEnter(() => Console.WriteLine("Player stopped"))
-            .On(Trigger.Stop)
-            .GoTo(State.Stopped);
-        
-        // Playing → Buffering
-        cfg
-            .OnExit(() => Console.WriteLine("Connection slow"))
-            .OnEnter(() => Console.WriteLine("Buffering content..."))
-            .OnEnter(() => ShowSpinner())
-            .On(Trigger.Buffer)
-            .GoTo(State.Buffering);
-    })
-    .State(State.Paused, cfg =>
-    {
-        // Paused → Playing
-        cfg
-            .OnExit(() => Console.WriteLine("Resuming playback"))
-            .OnEnter(() => Console.WriteLine("Playback resumed"))
-            .On(Trigger.Play)
-            .GoTo(State.Playing);
-        
-        // Paused → Stopped
-        cfg
-            .OnExit(() => Console.WriteLine("Stopping from pause"))
-            .OnEnter(() => Console.WriteLine("Player stopped"))
-            .On(Trigger.Stop)
-            .GoTo(State.Stopped);
-    })
-    .State(State.Buffering, cfg =>
-    {
-        // Buffering → Playing
-        cfg
-            .OnExit(() => Console.WriteLine("Buffer filled"))
-            .OnExit(() => HideSpinner())
-            .OnEnter(() => Console.WriteLine("Resuming playback"))
-            .On(Trigger.Resume)
-            .GoTo(State.Playing);
-    })
-    .Build();
-
-// Use the state machine
-mediaPlayer.Trigger(Trigger.Play);
-// Output:
-// Starting player
-// Loading media
-// Playback started
-
-mediaPlayer.Trigger(Trigger.Pause);
-// Output:
-// Pausing playback
-// Playback paused
-// (SavePosition called)
-```
-
 ## API Reference
 
-### StateMachine<TState, TTrigger>
+### StateMachine&lt;TState, TTrigger&gt;
+
+#### Static Methods
+
+| Method | Description |
+|--------|-------------|
+| `WithInitialState(TState state)` | Creates a builder with the specified initial state |
 
 #### Builder Methods
 
-- **`WithInitialState(TState state)`** - Sets the starting state
-- **`State(TState state, Action<StateConfiguration> configure)`** - Configures transitions originating from a state
-- **`Build()`** - Creates the state machine instance
+| Method | Description |
+|--------|-------------|
+| `State(TState state, Action<StateConfiguration> configure)` | Configures transitions from the specified state |
+| `Build()` | Creates the state machine instance |
 
-#### Instance Methods
+#### Instance Members
 
-- **`Trigger(TTrigger trigger)`** - Fires a trigger to execute a state transition
-- **`CurrentState`** - Gets the current state (property)
+| Member | Description |
+|--------|-------------|
+| `CurrentState` | Gets the current state |
+| `Trigger(TTrigger trigger)` | Fires a trigger to execute a transition |
 
-### StateConfiguration (Transition Chain)
+### StateConfiguration
 
-Each configuration chain represents **one specific transition** from the current state to a target state.
+Represents a transition chain from the current state to a target state.
 
-#### Methods
+| Method | Description |
+|--------|-------------|
+| `OnExit(Action action)` | Registers an action to execute when leaving the current state |
+| `OnEnter(Action action)` | Registers an action to execute when entering the target state |
+| `On(TTrigger trigger)` | Specifies the trigger that activates this transition |
+| `GoTo(TState nextState)` | Specifies the destination state |
 
-- **`OnExit(Action action)`** - Executes when leaving the **current state** (the state being configured)
-- **`OnEnter(Action action)`** - Executes when entering the **target state** (the state specified in `GoTo()`)
-- **`On(TTrigger trigger)`** - Defines which trigger activates this transition
-- **`GoTo(TState nextState)`** - Specifies the destination state for this transition
+## Use Cases
 
-#### Execution Order
-
-When a trigger is fired:
-1. All `OnExit` actions for the transition (leaving current state)
-2. All `OnEnter` actions for the transition (entering target state)
-3. State changes to the target state
-
-## Common Use Cases
-
-- **Game State Management**: Menu → Playing → Paused → GameOver
-- **Workflow Engines**: Draft → Review → Approved → Published
-- **Connection Management**: Disconnected → Connecting → Connected → Error
-- **Media Players**: Stopped → Playing → Paused → Buffering
-- **Document Lifecycle**: New → InProgress → Review → Completed
-- **Order Processing**: Pending → Processing → Shipped → Delivered
+| Domain | Example States |
+|--------|----------------|
+| Game Development | Menu → Playing → Paused → GameOver |
+| Workflow Engines | Draft → Review → Approved → Published |
+| Connection Management | Disconnected → Connecting → Connected → Error |
+| Media Players | Stopped → Playing → Paused → Buffering |
+| Document Lifecycle | New → InProgress → Review → Completed |
+| Order Processing | Pending → Processing → Shipped → Delivered |
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
 
-## Links
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a pull request
 
-- [NuGet Package](https://www.nuget.org/packages/StateCore)
-- [GitHub Repository](https://github.com/Chitova263/StateCore)
-- [Report Issues](https://github.com/Chitova263/StateCore/issues)
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+[NuGet Package](https://www.nuget.org/packages/StateCore) · [GitHub Repository](https://github.com/Chitova263/StateCore) · [Report an Issue](https://github.com/Chitova263/StateCore/issues)
